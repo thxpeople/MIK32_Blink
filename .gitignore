@@ -1,0 +1,6 @@
+*.o
+*.asm
+build/*
+.vscode/*
+!.vscode/launch.json
+
