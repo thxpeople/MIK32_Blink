@@ -83,7 +83,7 @@ MCU = -march=rv32imc_zicsr_zifencei -mabi=ilp32 -mcmodel=medlow
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 DEF_FlAGS := $(addprefix -D,$(DEFINES))
 
-CFLAGS := $(MCU) $(DEF_FlAGS) $(OPT) -std=gnu11 -msmall-data-limit=8 -mstrict-align -mno-save-restore
+CFLAGS := $(MCU) $(DEF_FlAGS) $(OPT) -std=gnu11 -Wall -fsigned-char -ffunction-sections
 
 # Generate dependency information
 CFLAGS += -MMD -MP
