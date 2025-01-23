@@ -42,9 +42,9 @@ SRCS += $(wildcard $(SRC_DIR)/*.cpp)
 # SRCS += $(SHARED_DIR)/libs/uart_lib.c 
 
 # Выбор ld скрипта, определяет куда будет загружена прошивка
-LDSCRIPT   = $(SHARED_DIR)/ldscripts/spifi.ld
-# LDSCRIPT = $(SHARED_DIR)/ldscripts/eeprom.ld
-# LDSCRIPT = $(SHARED_DIR)/ldscripts/ram.ld
+LDSCRIPT   = spifi.ld
+# LDSCRIPT = eeprom.ld
+# LDSCRIPT = ram.ld
 
 # Дефайны
 DEFINES += MIK32V2
