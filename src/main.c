@@ -34,6 +34,8 @@
 
 #endif
 
+volatile float p = 1.0;
+
 void InitClock()
 {
     PM->CLK_APB_P_SET |= PM_CLOCK_APB_P_UART_0_M | PM_CLOCK_APB_P_GPIO_0_M | PM_CLOCK_APB_P_GPIO_1_M | PM_CLOCK_APB_P_GPIO_2_M; // включение тактирования GPIO
@@ -86,6 +88,7 @@ void ledButton()
     }
     else {
         GPIO_0->OUTPUT &= ~(1 << PIN_LED1); // Установка сигнала вывода 7 порта в низкий уровень
+        p += 1.0;
     }
 }
 #endif
@@ -153,6 +156,12 @@ int main()
 #endif
     while (1) {
         ledBlink(); /* Светодиод мигает */
+
+        if (p > 5.0) {
+            p = 0.1f;
+        }
+
+
 
 #if defined(BOARD_LITE) || defined(BOARD_NUKE)
         ledButton(); /* Светодиод зажигается при нажатой кнопке */

@@ -76,9 +76,9 @@ SZ      = $(PREFIX)size
 #######################################
 
 # Оптимизация
-OPT = -O0 -g3
+OPT = -Og -g3
 
-MCU = -march=rv32imc_zicsr_zifencei -mabi=ilp32
+MCU = -march=rv32imc_zicsr_zifencei -mabi=ilp32 -mcmodel=medlow
 
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 DEF_FlAGS := $(addprefix -D,$(DEFINES))
@@ -90,9 +90,9 @@ CFLAGS += -MMD -MP
 
 ASSFLAGS := -x assembler-with-cpp $(CFLAGS)
 
-LIBS += -lc -lgcc
+LIBS += -Wl,--start-group -lc -Wl,--end-group
 
-LDFLAGS := -T"$(LDSCRIPT)" -nostartfiles -nostdlib -Xlinker --gc-section -Wl,-Map,"$(BUILD_DIR)/$(TARGET).map" -Wl,--print-memory-usage
+LDFLAGS := -T"$(LDSCRIPT)" -nostartfiles -Xlinker -Map="$(BUILD_DIR)/$(TARGET).map" -Wl,--gc-sections -Wl,--print-memory-usage
 LDFLAGS += -L$(SHARED_DIR)/ldscripts
 
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).asm
