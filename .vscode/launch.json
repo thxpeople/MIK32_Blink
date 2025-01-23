@@ -8,10 +8,13 @@
             "cwd": "${workspaceFolder}",
             "executable": "./build/blink.elf",
             "servertype": "openocd",
-            "gdbPath": "riscv64-unknown-elf-gdb",
+            "gdbPath": "riscv-none-elf-gdb",
             "configFiles": [
                 "interface/ftdi/mikron-link.cfg",
                 "target/mik32.cfg"
+            ],
+            "searchDir": [
+                "${env:MIK32_TOOLCHAIN}/mik32-uploader/openocd-scripts"
             ],
             "postStartSessionCommands": [
                 "set mem inaccessible-by-default on",
@@ -23,7 +26,7 @@
                 "set remotetimeout 10",
                 "set remote hardware-breakpoint-limit 2"
             ],
-            "svdFile": "mik32.svd"
+            "svdFile": "${env:MIK32_TOOLCHAIN}/mik32v2.svd"
         }
     ]
 }
