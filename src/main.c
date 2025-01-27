@@ -66,9 +66,6 @@ void blinkLED()
         // Переключить уровень сигнала на выходе, подключенного к светодиоду на противоположный
         HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
 
-        // Запустить цикл ожидания, для устранения эффекта "дребезга" контактов кнопки
-        for (volatile int i = 0; i < 500000; i++) {
-        }
         // сбросить флаг нажатия пользовательской кнопки
         flag = 0;
 
@@ -76,6 +73,12 @@ void blinkLED()
         // HAL_GPIO_InitInterruptLine(GPIO_MUX_PORT1_15_LINE_3, GPIO_INT_MODE_FALLING);
         HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
         HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
+    }
+
+    HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_10);
+
+    // Запустить цикл ожидания, для устранения эффекта "дребезга" контактов кнопки
+    for (volatile int i = 0; i < 500000; i++) {
     }
 }
 /**
@@ -118,6 +121,12 @@ void initGPIO()
 
     // Установить высокий уровень на выходе, подлюченном к светодиоду (ВЫКЛ)
     HAL_GPIO_WritePin(GPIO_0, GPIO_PIN_9, GPIO_PIN_HIGH);
+
+    // Настроить режим работы выхода, подключенного к светодиоду
+    GPIO_InitStruct.Pin = GPIO_PIN_10;
+    GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_OUTPUT;
+    GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
+    HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
 
     // Настроить режим работы входа, подключенного к пользовательской кнопке
     GPIO_InitStruct.Pin = GPIO_PIN_15;
