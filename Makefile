@@ -9,8 +9,10 @@ $(MIK32_TOOLCHAIN) := $(MIK32_TOOLCHAIN)
 MIK32_UPLOADER_DIR := $(MIK32_TOOLCHAIN)/mik32-uploader
 
 # Hex файл с загрузчиком
+MIK32_BOOTLOADER_HEX := $(MIK32_TOOLCHAIN)/elbear_fw_bootloader_qpi_xip_cshigh_0.hex
+# MIK32_BOOTLOADER_HEX := $(MIK32_TOOLCHAIN)/elbear_fw_bootloader_qspi_xip_cshigh_0.hex
 # MIK32_BOOTLOADER_HEX := $(MIK32_TOOLCHAIN)/mik32-bootloader.hex
-MIK32_BOOTLOADER_HEX := $(MIK32_TOOLCHAIN)/elbear_fw_bootloader_qspi_xip_cshigh_0.hex
+
 
 
 # Путь до директории framework-mik32v2-sdk https://github.com/MikronMIK32/framework-mik32v2-sdk
