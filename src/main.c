@@ -1,61 +1,86 @@
-#include <mik32_memory_map.h>
-#include <pad_config.h>
-#include <gpio.h>
-#include <power_manager.h>
-#include <wakeup.h>
+#include "mik32_hal_pcc.h"
+#include "mik32_hal_gpio.h"
+#include "mik32_hal_scr1_timer.h"
 
 /*
- * Данный пример демонстрирует работу с GPIO и PAD_CONFIG.
- * В примере настраивается вывод, который подключенный к светодиоду, в режим GPIO.
+ * Пример для платы DIP-MIK32.
+ *
+ * Данный пример демонстрирует работу с прерыванием системного таймера по сравнению.
+ * В примере настраивается вывод PORT1_3, который подключен к светодиоду, в режим GPIO.
+ * По достижению счетчика таймера значения сравнения срабатывает прерывание, по которому
+ * переменная flag устанавливается в 1. В зависимости от значения flag инвертируется сигнал
+ * на выводе PORT1_3.
+ **/
+
+#define DELAY_VALUE 32000000 // Значение счетчика таймера (1 секунда при частоте ядра 32МГц).
+
+void SystemClock_Config(void);
+void GPIO_Init(void);
+
+/* Флаг, по которому инвертируется выходной сигнал на выводе PORT1_3.
+ * Устанавливается в обработчике прерывания trap_handler.
  */
-
-#define PIN_LED1 9    // Светодиод управляется выводом PORT_0_9
-#define PIN_LED2 10   // Светодиод управляется выводом PORT_0_10
-#define PIN_BUTTON 15 // Кнопка на PORT_1_15
-
-
-void InitClock()
-{
-    PM->CLK_APB_P_SET |= PM_CLOCK_APB_P_UART_0_M | PM_CLOCK_APB_P_GPIO_0_M | PM_CLOCK_APB_P_GPIO_1_M | PM_CLOCK_APB_P_GPIO_2_M; // включение тактирования GPIO
-    PM->CLK_APB_M_SET |= PM_CLOCK_APB_M_PAD_CONFIG_M | PM_CLOCK_APB_M_WU_M | PM_CLOCK_APB_M_PM_M;                               // включение тактирования блока для смены режима выводов
-}
-
-void ledBlink()
-{
-    GPIO_0->OUTPUT ^= 1 << PIN_LED2; // Установка сигнала вывода 3 порта 1 в противоположный уровень
-    for (volatile int i = 0; i < 100000; i++) {
-        (void)i;
-    }
-}
-
-
-
-
-void ledButton()
-{
-    if (GPIO_1->STATE & (1 << PIN_BUTTON)) {
-        GPIO_0->OUTPUT |= 1 << PIN_LED1; // Установка сигнала вывода 7 порта 2 в высокий уровень
-    }
-    else {
-        GPIO_0->OUTPUT &= ~(1 << PIN_LED1); // Установка сигнала вывода 7 порта в низкий уровень
-    }
-}
-
+volatile int flag = 0;
 
 int main()
 {
-    InitClock(); // Включение тактирования GPIO
+    /* Настройки тактирования. */
+    SystemClock_Config();
 
-    PAD_CONFIG->PORT_0_CFG &= ~(0b11 << (2 * PIN_LED1));   // Установка вывода 9 порта 0 в режим GPIO
-    PAD_CONFIG->PORT_0_CFG &= ~(0b11 << (2 * PIN_LED2));   // Установка вывода 10 порта 0 в режим GPIO
-    PAD_CONFIG->PORT_1_CFG &= ~(0b11 << (2 * PIN_BUTTON)); // Установка вывода 15 порта 1 в режим GPIO
+    /* Инициализация GPIO. */
+    GPIO_Init();
 
-    GPIO_0->DIRECTION_OUT = 1 << PIN_LED1;  // Установка направления вывода 9 порта 0 на выход
-    GPIO_0->DIRECTION_OUT = 1 << PIN_LED2;  // Установка направления вывода 10 порта 0 на выход
-    GPIO_1->DIRECTION_IN = 1 << PIN_BUTTON; // Установка направления вывода 15 порта 1 на вход
+    /* Инициализация системного таймера. */
+    HAL_SCR1_Timer_Init(HAL_SCR1_TIMER_CLKSRC_INTERNAL, 0);
+    __HAL_SCR1_TIMER_SET_CMP(DELAY_VALUE);
+    __HAL_SCR1_TIMER_IRQ_ENABLE(); // Разрешить прерывание системного таймера.
 
-    while (1) {
-        ledBlink(); /* Светодиод мигает */
-        ledButton(); /* Светодиод зажигается при нажатой кнопке */
+    while (1)
+    {
+        if (flag)
+        {
+            HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
+            flag = 0;
+        }
     }
+}
+
+void SystemClock_Config(void)
+{
+    PCC_InitTypeDef PCC_OscInit = {0};
+
+    PCC_OscInit.OscillatorEnable = PCC_OSCILLATORTYPE_ALL;
+    PCC_OscInit.FreqMon.OscillatorSystem = PCC_OSCILLATORTYPE_OSC32M;
+    PCC_OscInit.FreqMon.ForceOscSys = PCC_FORCE_OSC_SYS_UNFIXED;
+    PCC_OscInit.FreqMon.Force32KClk = PCC_FREQ_MONITOR_SOURCE_OSC32K;
+    PCC_OscInit.AHBDivider = 0;
+    PCC_OscInit.APBMDivider = 0;
+    PCC_OscInit.APBPDivider = 0;
+    PCC_OscInit.HSI32MCalibrationValue = 128;
+    PCC_OscInit.LSI32KCalibrationValue = 8;
+    PCC_OscInit.RTCClockSelection = PCC_RTC_CLOCK_SOURCE_AUTO;
+    PCC_OscInit.RTCClockCPUSelection = PCC_CPU_RTC_CLOCK_SOURCE_OSC32K;
+    HAL_PCC_Config(&PCC_OscInit);
+}
+
+void GPIO_Init()
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    __HAL_PCC_GPIO_0_CLK_ENABLE();
+
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_OUTPUT;
+    GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
+    HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIO_0, GPIO_InitStruct.Pin, __LOW);
+}
+
+volatile void trap_handler()
+{
+    flag = 1;
+    __HAL_SCR1_TIMER_SET_TIME(0); // Сброс счетчика системного таймера.
+
+    /* Перезапись значения сравнения используется для сброса запроса прерывания по сравнению. */
+    __HAL_SCR1_TIMER_SET_CMP(DELAY_VALUE);
 }

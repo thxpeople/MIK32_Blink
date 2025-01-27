@@ -9,7 +9,9 @@ $(MIK32_TOOLCHAIN) := $(MIK32_TOOLCHAIN)
 MIK32_UPLOADER_DIR := $(MIK32_TOOLCHAIN)/mik32-uploader
 
 # Hex файл с загрузчиком
-MIK32_BOOTLOADER_HEX := $(MIK32_TOOLCHAIN)/mik32-bootloader.hex
+# MIK32_BOOTLOADER_HEX := $(MIK32_TOOLCHAIN)/mik32-bootloader.hex
+MIK32_BOOTLOADER_HEX := elbear_fw_bootloader_qspi_xip_cshigh_0_1.hex
+
 
 # Путь до директории framework-mik32v2-sdk https://github.com/MikronMIK32/framework-mik32v2-sdk
 MIK32_FRAMEWORK_DIR = framework-mik32v2-sdk
@@ -35,8 +37,8 @@ INC_DIRS += $(HAL_DIR)/utilities/Include
 SRCS  = $(SHARED_DIR)/runtime/crt0.S
 SRCS += $(wildcard $(SRC_DIR)/*.c) 
 SRCS += $(wildcard $(SRC_DIR)/*.cpp) 
-# SRCS += $(HAL_DIR)/peripherals/Source/mik32_hal_pcc.c 
-# SRCS += $(HAL_DIR)/peripherals/Source/mik32_hal_gpio.c 
+SRCS += $(HAL_DIR)/peripherals/Source/mik32_hal_pcc.c 
+SRCS += $(HAL_DIR)/peripherals/Source/mik32_hal_gpio.c 
 # SRCS += $(HAL_DIR)/peripherals/Source/mik32_hal_adc.c 
 # SRCS += $(SHARED_DIR)/libs/xprintf.c 
 # SRCS += $(SHARED_DIR)/libs/uart_lib.c 
