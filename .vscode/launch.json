@@ -8,7 +8,8 @@
             "cwd": "${workspaceFolder}",
             "executable": "./build/blink.elf",
             "servertype": "openocd",
-            "gdbPath": "riscv-none-elf-gdb",
+            "gdbPath": "gdb-multiarch", // Меньше ошибок при отладки
+            // "gdbPath": "riscv-none-elf-gdb",
             "configFiles": [
                 "interface/ftdi/mikron-link.cfg",
                 "target/mik32.cfg"
