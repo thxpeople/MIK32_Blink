@@ -18,9 +18,9 @@
  * 2) переменная flag должная иметь квалификатор volatile, так как изменяется внутри обработчика прерываний.
  */
 #include "mik32_hal.h"
-#include "mik32_hal_pcc.h"
 #include "mik32_hal_gpio.h"
 #include "mik32_hal_irq.h"
+#include "mik32_hal_pcc.h"
 
 #define BOARD_NUKE_MIK32
 
@@ -81,18 +81,18 @@ void blinkLED()
  */
 void systemClockConfig(void)
 {
-    PCC_InitTypeDef PCC_OscInit = {0};
-    PCC_OscInit.OscillatorEnable = PCC_OSCILLATORTYPE_ALL;
+    PCC_InitTypeDef PCC_OscInit          = {0};
+    PCC_OscInit.OscillatorEnable         = PCC_OSCILLATORTYPE_ALL;
     PCC_OscInit.FreqMon.OscillatorSystem = PCC_OSCILLATORTYPE_OSC32M;
-    PCC_OscInit.FreqMon.ForceOscSys = PCC_FORCE_OSC_SYS_UNFIXED;
-    PCC_OscInit.FreqMon.Force32KClk = PCC_FREQ_MONITOR_SOURCE_OSC32K;
-    PCC_OscInit.AHBDivider = 0;
-    PCC_OscInit.APBMDivider = 0;
-    PCC_OscInit.APBPDivider = 0;
-    PCC_OscInit.HSI32MCalibrationValue = 128;
-    PCC_OscInit.LSI32KCalibrationValue = 8;
-    PCC_OscInit.RTCClockSelection = PCC_RTC_CLOCK_SOURCE_AUTO;
-    PCC_OscInit.RTCClockCPUSelection = PCC_CPU_RTC_CLOCK_SOURCE_OSC32K;
+    PCC_OscInit.FreqMon.ForceOscSys      = PCC_FORCE_OSC_SYS_UNFIXED;
+    PCC_OscInit.FreqMon.Force32KClk      = PCC_FREQ_MONITOR_SOURCE_OSC32K;
+    PCC_OscInit.AHBDivider               = 0;
+    PCC_OscInit.APBMDivider              = 0;
+    PCC_OscInit.APBPDivider              = 0;
+    PCC_OscInit.HSI32MCalibrationValue   = 128;
+    PCC_OscInit.LSI32KCalibrationValue   = 8;
+    PCC_OscInit.RTCClockSelection        = PCC_RTC_CLOCK_SOURCE_AUTO;
+    PCC_OscInit.RTCClockCPUSelection     = PCC_CPU_RTC_CLOCK_SOURCE_OSC32K;
     HAL_PCC_Config(&PCC_OscInit);
 }
 /**
@@ -109,7 +109,7 @@ void initGPIO()
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     // Настроить режим работы выхода, подключенного к светодиоду
-    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Pin  = GPIO_PIN_9;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_OUTPUT;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
     HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
@@ -118,13 +118,13 @@ void initGPIO()
     HAL_GPIO_WritePin(GPIO_0, GPIO_PIN_9, GPIO_PIN_HIGH);
 
     // Настроить режим работы выхода, подключенного к светодиоду
-    GPIO_InitStruct.Pin = GPIO_PIN_10;
+    GPIO_InitStruct.Pin  = GPIO_PIN_10;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_OUTPUT;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
     HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
 
     // Настроить режим работы входа, подключенного к пользовательской кнопке
-    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Pin  = GPIO_PIN_15;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_INPUT;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_UP;
     HAL_GPIO_Init(GPIO_1, &GPIO_InitStruct);
@@ -141,9 +141,7 @@ void trap_handler()
     // Если источник прерывания подсистема ввода/вывода общего назначения, то ..
     if (EPIC_CHECK_GPIO_IRQ()) {
         // Если источник прерывания линия 3, то ...
-        if (HAL_GPIO_LineInterruptState(GPIO_LINE_3))
-
-        {
+        if (HAL_GPIO_LineInterruptState(GPIO_LINE_3)) {
             // Установить флаг нажатия пользовательской кнопки
             flag = 1;
         }
