@@ -129,9 +129,9 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 upload: $(BUILD_DIR)/$(TARGET).hex
-	python $(MIK32_UPLOADER_DIR)/mik32_upload.py --run-openocd --openocd-exec=openocd --openocd-scripts=$(MIK32_UPLOADER_DIR)/openocd-scripts $^
+	python3 $(MIK32_UPLOADER_DIR)/mik32_upload.py --run-openocd --openocd-exec=openocd --openocd-scripts=$(MIK32_UPLOADER_DIR)/openocd-scripts $^
 
 uploadBoot:
-	python $(MIK32_UPLOADER_DIR)/mik32_upload.py --run-openocd --openocd-exec=openocd --openocd-scripts=$(MIK32_UPLOADER_DIR)/openocd-scripts $(MIK32_BOOTLOADER_HEX)
+	python3 $(MIK32_UPLOADER_DIR)/mik32_upload.py --run-openocd --openocd-exec=openocd --openocd-scripts=$(MIK32_UPLOADER_DIR)/openocd-scripts $(MIK32_BOOTLOADER_HEX)
 
 -include $(DEPS)
