@@ -1,54 +1,87 @@
+/**
+ * @file
+ * Пример демонстрирует работу с прерываниями от подсистемы ввода/вывода общего назначения (GPIO).
+ * В листинге приведен порядок настройки:
+ * - подсистемы обработки прерываний (main) и объявления функции для обработки прерываний (trap_handler);
+ * - предотвращения эффекта дребезга контактов при использовании прерываний;
+ * - подсистемы тактирования и монитора частоты МК (systemClockConfig);
+ * - выводов общего назначения (initGPIO);
+ * - управление светодиодом на основе обработки прерывания при нажатии на кнопку (blinkLED)
+ *
+ * Ожидаемое поведение при выполнении приложения:
+ * 1) светодиод выключен;
+ * 2) быстрое нажатие на пользовательскую кнопку переключает режим работы светодиода (ВКЛ/ВЫКЛ);
+ * 3) при удержании пользовательской кнопки светодиод светит.
+ *
+ * Примечания:
+ * 1) обработчик прерываний trap_handler - это функция статически линкуемая (на этапе сборки приложения) к вектору прерываний EPIC.
+ * 2) переменная flag должная иметь квалификатор volatile, так как изменяется внутри обработчика прерываний.
+ * 3) участки программ, заключенные в секции #define BOARD_ELBEAR_ACE_UNO,  #define BOARD_NUKE_MIK32 и #define BOARD_BLUEPILL_MIK32,
+ * настраивают и определяют поведение отладочных плат с учетом их технической реализации.
+ * Необходимость компиляции таких участков кода определяется автоматически на основе выбранной среды окружения env
+ * соответствующей типу отладочной платы (см. файл platformio.ini)
+ * 4) для отладочной платы ELBEAR ACE-UNO используется прерывание по фронту, для NUKE MIK32 - по спаду
+ */
+#include "mik32_hal.h"
 #include "mik32_hal_pcc.h"
 #include "mik32_hal_gpio.h"
-#include "mik32_hal_scr1_timer.h"
+#include "mik32_hal_irq.h"
 
-/*
- * Пример для платы DIP-MIK32.
- *
- * Данный пример демонстрирует работу с прерыванием системного таймера по сравнению.
- * В примере настраивается вывод PORT1_3, который подключен к светодиоду, в режим GPIO.
- * По достижению счетчика таймера значения сравнения срабатывает прерывание, по которому
- * переменная flag устанавливается в 1. В зависимости от значения flag инвертируется сигнал
- * на выводе PORT1_3.
- **/
+#define BOARD_NUKE_MIK32
 
-#define DELAY_VALUE 32000000 // Значение счетчика таймера (1 секунда при частоте ядра 32МГц).
+void systemClockConfig();
+void initGPIO();
+void blinkLED();
 
-void SystemClock_Config(void);
-void GPIO_Init(void);
-
-/* Флаг, по которому инвертируется выходной сигнал на выводе PORT1_3.
- * Устанавливается в обработчике прерывания trap_handler.
- */
-volatile int flag = 0;
+volatile uint32_t flag = 0;
 
 int main()
 {
-    /* Настройки тактирования. */
-    SystemClock_Config();
-
-    /* Инициализация GPIO. */
-    GPIO_Init();
-
-    /* Инициализация системного таймера. */
-    HAL_SCR1_Timer_Init(HAL_SCR1_TIMER_CLKSRC_INTERNAL, 0);
-    __HAL_SCR1_TIMER_SET_CMP(DELAY_VALUE);
-    __HAL_SCR1_TIMER_IRQ_ENABLE(); // Разрешить прерывание системного таймера.
-
-    while (1)
-    {
-        if (flag)
-        {
-            HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
-            flag = 0;
-        }
+    // 1. Инициализировать подсистему аппаратной абстракции
+    HAL_Init();
+    // 2. Инициализировать подсистему тактирования и монитор частоты МК
+    systemClockConfig();
+    // 3. Инициализировать подсистему ввода/вывода общего назначения, настроить выводы для кнопки и светодиода(ов)
+    initGPIO();
+    // 4. Включить прерывания по уровню для линии EPIC GPIO_IRQ
+    HAL_EPIC_MaskLevelSet(HAL_EPIC_GPIO_IRQ_MASK);
+    // 5. Включить глобальные прерывания
+    HAL_IRQ_EnableInterrupts();
+    // 6. Запустить "бесконечный" цикл выполнения программы
+    while (1) {
+        // 7. Управлять уровнем сигнала вывода, подключеного к светодиоду
+        blinkLED();
     }
 }
+/**
+ * Управляет светодиодом на основе результатов обработки прерывания,
+ * возникающего при нажатии на пользовательскую кнопку
+ */
+void blinkLED()
+{
+    if (flag) {
+        // Отключить обработку запросов прерываний от кнопки
+        HAL_GPIO_DeInitInterruptLine(GPIO_MUX_PORT1_15_LINE_3);
 
-void SystemClock_Config(void)
+        // Переключить уровень сигнала на выходе, подключенного к светодиоду на противоположный
+        HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
+
+        // Запустить цикл ожидания, для устранения эффекта "дребезга" контактов кнопки
+        for (volatile int i = 0; i < 500000; i++) {
+        }
+        // сбросить флаг нажатия пользовательской кнопки
+        flag = 0;
+
+        // Включить обработку запросов прерываний от кнопки
+        HAL_GPIO_InitInterruptLine(GPIO_MUX_PORT1_15_LINE_3, GPIO_INT_MODE_FALLING);
+    }
+}
+/**
+ * Настраивает подсистему тактирования и монитор частоты МК
+ */
+void systemClockConfig(void)
 {
     PCC_InitTypeDef PCC_OscInit = {0};
-
     PCC_OscInit.OscillatorEnable = PCC_OSCILLATORTYPE_ALL;
     PCC_OscInit.FreqMon.OscillatorSystem = PCC_OSCILLATORTYPE_OSC32M;
     PCC_OscInit.FreqMon.ForceOscSys = PCC_FORCE_OSC_SYS_UNFIXED;
@@ -62,25 +95,55 @@ void SystemClock_Config(void)
     PCC_OscInit.RTCClockCPUSelection = PCC_CPU_RTC_CLOCK_SOURCE_OSC32K;
     HAL_PCC_Config(&PCC_OscInit);
 }
-
-void GPIO_Init()
+/**
+ * Инициализирует подсистему ввода/вывода общего назначения. Настраивает выводы.
+ */
+void initGPIO()
 {
+    __HAL_PCC_GPIO_IRQ_CLK_ENABLE();
+
+    // Включить тактирование GPIO_0 и GPIO_1
+    __HAL_PCC_GPIO_0_CLK_ENABLE();
+    __HAL_PCC_GPIO_1_CLK_ENABLE();
+
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    __HAL_PCC_GPIO_0_CLK_ENABLE();
-
+    // Настроить режим работы выхода, подключенного к светодиоду
     GPIO_InitStruct.Pin = GPIO_PIN_9;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_OUTPUT;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
     HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
-    HAL_GPIO_WritePin(GPIO_0, GPIO_InitStruct.Pin, __LOW);
+
+    // Установить высокий уровень на выходе, подлюченном к светодиоду (ВЫКЛ)
+    HAL_GPIO_WritePin(GPIO_0, GPIO_PIN_9, GPIO_PIN_HIGH);
+
+    // Настроить режим работы входа, подключенного к пользовательской кнопке
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_INPUT;
+    GPIO_InitStruct.Pull = HAL_GPIO_PULL_UP;
+    HAL_GPIO_Init(GPIO_1, &GPIO_InitStruct);
+
+    // Настроить обработку прерываний по спаду для входа, подключенного к пользовательской кнопке
+    HAL_GPIO_InitInterruptLine(GPIO_MUX_PORT1_15_LINE_3, GPIO_INT_MODE_FALLING);
 }
 
-volatile void trap_handler()
+/**
+ * Обрабатывает прерывания от подсистемы ввода/вывода общего назначения (GPIO).
+ */
+void trap_handler()
 {
-    flag = 1;
-    __HAL_SCR1_TIMER_SET_TIME(0); // Сброс счетчика системного таймера.
+    // Если источник прерывания подсистема ввода/вывода общего назначения, то ..
+    if (EPIC_CHECK_GPIO_IRQ()) {
+        // Если источник прерывания линия 3, то ...
+        if (HAL_GPIO_LineInterruptState(GPIO_LINE_3))
 
-    /* Перезапись значения сравнения используется для сброса запроса прерывания по сравнению. */
-    __HAL_SCR1_TIMER_SET_CMP(DELAY_VALUE);
+        {
+            // Установить флаг нажатия пользовательской кнопки
+            flag = 1;
+        }
+        // Сбросить прерывания от подсистемы ввода/вывода общего назначения
+        HAL_GPIO_ClearInterrupts();
+    }
+    // Сбросить все прерывания EPIC
+    HAL_EPIC_Clear(0xFFFFFFFF);
 }
