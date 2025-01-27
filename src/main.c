@@ -61,7 +61,7 @@ void blinkLED()
 {
     if (flag) {
         // Отключить обработку запросов прерываний от кнопки
-        HAL_GPIO_DeInitInterruptLine(GPIO_MUX_PORT1_15_LINE_3);
+        // HAL_GPIO_DeInitInterruptLine(GPIO_MUX_PORT1_15_LINE_3);
 
         // Переключить уровень сигнала на выходе, подключенного к светодиоду на противоположный
         HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
@@ -73,7 +73,9 @@ void blinkLED()
         flag = 0;
 
         // Включить обработку запросов прерываний от кнопки
-        HAL_GPIO_InitInterruptLine(GPIO_MUX_PORT1_15_LINE_3, GPIO_INT_MODE_FALLING);
+        // HAL_GPIO_InitInterruptLine(GPIO_MUX_PORT1_15_LINE_3, GPIO_INT_MODE_FALLING);
+        HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
+        HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
     }
 }
 /**
